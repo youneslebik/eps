@@ -84,11 +84,11 @@ def init_database():
         
         if not Admin.query.first():
             admin = Admin(
-                username='admin',
-                password_hash=generate_password_hash('admin123')
+                username='lebikyounes',
+                password_hash=generate_password_hash('Younes@2006')
             )
             db.session.add(admin)
-            print("✅ تم إنشاء حساب المسؤول الافتراضي (admin/admin123)")
+            print("✅ تم إنشاء حساب المسؤول الافتراضي (lebikyounes/Younes@2006)")
         
         if not Video.query.first():
             videos_data = [
