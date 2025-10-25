@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>حاسبة تكاليف المونتاج - عرض الحسابات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-fadeIn { animation: modalFadeIn 0.3s ease-out; }
+        
+        @keyframes welcomeSlideIn {
+            0% { opacity: 0; transform: scale(0.8) translateY(-50px); }
+            50% { transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        
+        @keyframes welcomeSlideOut {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.8) translateY(-50px); }
+        }
+        
+        .welcome-slide-in { animation: welcomeSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .welcome-slide-out { animation: welcomeSlideOut 0.4s ease-out forwards; }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+        
+        .sparkle { animation: sparkle 1s infinite; }
+        
+        .thumbnail-container {
+            position: relative;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .thumbnail-container img {
+            transition: all 0.3s ease;
+        }
+        
+        .thumbnail-container:hover img {
+            transform: scale(1.1);
+        }
+        
+        .thumbnail-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: bold;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
+    
+    <!-- نافذة الترحيب المنبثقة -->
+    <div id="welcomeModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[9999]" style="backdrop-filter: blur(10px);">
+        <div class="welcome-slide-in bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-3xl shadow-2xl p-8 sm:p-12 max-w-2xl mx-4 text-center border-4 border-white">
+            <div class="mb-6">
+                <div class="text-6xl sm:text-8xl mb-4 sparkle">🎬</div>
+                <h2 class="text-3xl sm:text-5xl font-black text-white mb-3" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+                    مرحباً بك!
+                </h2>
+                <div class="h-1 w-24 sm:w-32 bg-gradient-to-r from-yellow-400 to-orange-500 mx-auto rounded-full mb-4"></div>
+                <p class="text-xl sm:text-2xl text-blue-100 font-semibold mb-2">نظام حاسبة تكاليف المونتاج الاحترافي</p>
+                <p class="text-base sm:text-lg text-blue-50">✨ حسابات دقيقة وشفافة لجميع مشاريعك ✨</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-2 sm:gap-3 text-white text-xs sm:text-sm">
+                <span class="bg-white bg-opacity-20 px-3 sm:px-4 py-2 rounded-full">📊 حسابات دقيقة</span>
+                <span class="bg-white bg-opacity-20 px-3 sm:px-4 py-2 rounded-full">⚡ سريع ومتطور</span>
+                <span class="bg-white bg-opacity-20 px-3 sm:px-4 py-2 rounded-full">🎯 احترافي 100%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-xl mb-8 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div class="text-center sm:text-right">
+                    <h1 class="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                        🎬 حاسبة تكاليف مونتاج الفيديو
+                    </h1>
+                    <p class="text-sm sm:text-base text-gray-600">حسابات دقيقة واحترافية لمشاريع المونتاج</p>
+                </div>
+                <a href="{{ url_for('admin_login') }}"
+                    class="px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition transform hover:scale-105 shadow-lg text-sm sm:text-base font-semibold">
+                    🔐 دخول المسؤول
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+        <!-- جدول الفيديوهات -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden mb-8 fade-in">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 sm:p-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-white">📊 قائمة الفيديوهات المنتجة</h2>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[800px]">
+                    <thead class="bg-gradient-to-r from-gray-50 to-slate-50">
+                        <tr>
+                            <th class="p-3 sm:p-4 text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider text-right">الفيديو</th>
+                            <th class="p-3 sm:p-4 text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider text-center">النوع</th>
+                            <th class="p-3 sm:p-4 text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider text-center">المدة</th>
+                            <th class="p-3 sm:p-4 text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider text-center">سعر الدقيقة</th>
+                            <th class="p-3 sm:p-4 text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider text-center">الريلات المقسمة</th>
+                            <th class="p-3 sm:p-4 text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wider text-center">السعر الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for video in videos %}
+                        <tr class="hover:bg-blue-50 transition">
+                            <td class="p-3 sm:p-4">
+                                <div class="flex items-center gap-3 sm:gap-4">
+                                    {% if video.video_url %}
+                                    <a href="{{ video.video_url }}" target="_blank" class="w-20 sm:w-24 flex-shrink-0 group">
+                                        <div class="thumbnail-container" style="aspect-ratio: {% if video.video_type == 'reel_only' or 'shorts' in video.video_url %}9/16{% else %}16/9{% endif %};">
+                                            <img 
+                                                data-video-url="{{ video.video_url }}"
+                                                class="w-full h-full object-cover lazy-thumbnail" 
+                                                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'%3E%3Crect fill='%23667eea' width='16' height='9'/%3E%3C/svg%3E"
+                                                alt="{{ video.name }}">
+                                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition flex items-center justify-center">
+                                                <svg class="w-8 h-8 sm:w-10 sm:h-10 text-white opacity-0 group-hover:opacity-100 transition" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/>
+                                                </svg>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    {% endif %}
+                                    <div class="min-w-0">
+                                        <p class="font-bold text-gray-800 text-sm sm:text-base lg:text-lg mb-1">{{ video.name }}</p>
+                                        {% if video.video_url %}
+                                        <a href="{{ video.video_url }}" target="_blank" class="text-xs sm:text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                                            عرض الفيديو ↗
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-3 sm:p-4 text-center">
+                                <span class="inline-flex px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold whitespace-nowrap
+                                    {% if video.video_type == 'yt_reels' %}bg-purple-100 text-purple-800
+                                    {% elif video.video_type == 'yt_only' %}bg-blue-100 text-blue-800
+                                    {% else %}bg-green-100 text-green-800{% endif %}">
+                                    {% if video.video_type == 'yt_reels' %}🎥 يوتيوب + ريلات
+                                    {% elif video.video_type == 'yt_only' %}📹 يوتيوب فقط
+                                    {% else %}📱 ريل منفصل{% endif %}
+                                </span>
+                            </td>
+                            <td class="p-3 sm:p-4 text-center font-mono text-sm sm:text-base text-gray-700">
+                                {% if video.video_type in ['yt_reels', 'yt_only'] %}
+                                    <span class="bg-gray-100 px-2 sm:px-3 py-1 rounded-lg">{{ video.minutes }}:{{ '%02d'|format(video.seconds) }}</span>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3 sm:p-4 text-center font-semibold text-sm sm:text-base text-gray-700">
+                                {% if video.video_type in ['yt_reels', 'yt_only'] %}
+                                    <span class="text-green-600">{{ '%.2f'|format(video.price_per_minute) }} $</span>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3 sm:p-4 text-center">
+                                {% if video.video_type == 'yt_reels' %}
+                                    <div class="flex flex-col items-center">
+                                        <span class="font-bold text-purple-600 text-sm sm:text-base">{{ video.split_reels|length }} ريل</span>
+                                        <span class="text-xs sm:text-sm text-gray-600">({{ '%.2f'|format(video.split_reels|length * video.reel_price) }} $)</span>
+                                        {% if video.split_reels|length > 0 %}
+                                        <button onclick='showReelsPopup({{ video.name|tojson }}, {{ video.split_reels|tojson }})' 
+                                            class="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline font-semibold">
+                                            عرض التفاصيل
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="p-3 sm:p-4 text-center">
+                                <span class="text-xl sm:text-2xl font-bold text-blue-600">{{ '%.2f'|format(video.calculated_total) }} $</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- الإجمالي الكلي -->
+            <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 sm:p-6 border-t-4 border-green-500">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="text-center sm:text-right">
+                        <p class="text-base sm:text-lg text-gray-600 mb-1">💰 المبلغ الإجمالي الكلي</p>
+                        <p class="text-3xl sm:text-4xl lg:text-5xl font-black text-green-600">{{ '%.2f'|format(grand_total) }} $</p>
+                    </div>
+                    <button onclick="toggleExplanation()" 
+                        class="px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition shadow-lg hover:shadow-xl text-sm sm:text-base font-semibold">
+                        📖 شرح طريقة الحساب
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- قسم الشرح -->
+        <div id="explanationSection" class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 hidden fade-in">
+            <h3 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-6 border-b-4 border-blue-500 pb-3">
+                📚 تفاصيل الحساب وقواعد التقريب
+            </h3>
+            
+            <div class="space-y-6 sm:space-y-8">
+                <!-- طريقة الحساب -->
+                <div class="bg-blue-50 p-4 sm:p-6 rounded-xl">
+                    <h4 class="text-xl sm:text-2xl font-bold text-blue-800 mb-4">1️⃣ طريقة حساب السعر الإجمالي</h4>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h5 class="font-bold text-purple-700 mb-2 text-sm sm:text-base">🎥 يوتيوب + ريلات مقسمة:</h5>
+                            <code class="block bg-gray-100 p-3 rounded text-xs sm:text-sm font-mono overflow-x-auto">
+                                السعر = ((الدقائق + (الثواني ÷ 60)) × سعر الدقيقة) + (عدد الريلات × 2.5)
+                            </code>
+                            <p class="text-xs sm:text-sm text-gray-600 mt-2">مثال: فيديو 4:31 دقيقة = (4.517 × 3.5) + (3 × 2.5) = 15.81 + 7.5 = 23.31 → <strong class="text-green-600">بعد التقريب: 23.5 $</strong></p>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h5 class="font-bold text-blue-700 mb-2 text-sm sm:text-base">📹 يوتيوب فقط:</h5>
+                            <code class="block bg-gray-100 p-3 rounded text-xs sm:text-sm font-mono overflow-x-auto">
+                                السعر = (الدقائق + (الثواني ÷ 60)) × سعر الدقيقة
+                            </code>
+                            <p class="text-xs sm:text-sm text-gray-600 mt-2">مثال: فيديو 5:42 دقيقة = 5.7 × 3.5 = 19.95 → <strong class="text-green-600">بعد التقريب: 20 $</strong></p>
+                        </div>
+
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h5 class="font-bold text-green-700 mb-2 text-sm sm:text-base">📱 ريل منفصل:</h5>
+                            <code class="block bg-gray-100 p-3 rounded text-xs sm:text-sm font-mono">
+                                السعر الثابت = 5.00 $
+                            </code>
+                            <p class="text-xs sm:text-sm text-gray-600 mt-2">سعر ثابت لجميع الريلات المنفصلة بدون أي حسابات إضافية</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- قاعدة التقريب -->
+                <div class="bg-amber-50 p-4 sm:p-6 rounded-xl">
+                    <h4 class="text-xl sm:text-2xl font-bold text-amber-800 mb-4">2️⃣ قاعدة التقريب المخصصة</h4>
+                    <p class="text-sm sm:text-base text-gray-700 mb-4">نستخدم قاعدة تقريب خاصة لأقرب 0.5 (نصف دولار) لضمان العدالة:</p>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-start bg-white p-3 sm:p-4 rounded-lg shadow">
+                            <span class="text-2xl sm:text-3xl ml-3">⬇️</span>
+                            <div class="flex-1">
+                                <p class="font-bold text-red-600 text-sm sm:text-base">إذا كان الجزء العشري أقل من 0.25</p>
+                                <p class="text-xs sm:text-sm text-gray-600">يتم التقريب للأسفل إلى الرقم الصحيح</p>
+                                <code class="block bg-gray-100 p-2 rounded mt-2 text-xs sm:text-sm">مثال: 10.24 $ → 10.00 $</code>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start bg-white p-3 sm:p-4 rounded-lg shadow">
+                            <span class="text-2xl sm:text-3xl ml-3">➡️</span>
+                            <div class="flex-1">
+                                <p class="font-bold text-yellow-600 text-sm sm:text-base">إذا كان الجزء العشري بين 0.25 و 0.74</p>
+                                <p class="text-xs sm:text-sm text-gray-600">يتم التقريب إلى النصف (0.5)</p>
+                                <code class="block bg-gray-100 p-2 rounded mt-2 text-xs sm:text-sm">مثال: 10.25 $ → 10.50 $ | 10.74 $ → 10.50 $</code>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start bg-white p-3 sm:p-4 rounded-lg shadow">
+                            <span class="text-2xl sm:text-3xl ml-3">⬆️</span>
+                            <div class="flex-1">
+                                <p class="font-bold text-green-600 text-sm sm:text-base">إذا كان الجزء العشري 0.75 أو أكثر</p>
+                                <p class="text-xs sm:text-sm text-gray-600">يتم التقريب للأعلى إلى الرقم الصحيح التالي</p>
+                                <code class="block bg-gray-100 p-2 rounded mt-2 text-xs sm:text-sm">مثال: 10.75 $ → 11.00 $ | 10.99 $ → 11.00 $</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- الإجمالي الكلي -->
+                <div class="bg-green-50 p-4 sm:p-6 rounded-xl">
+                    <h4 class="text-xl sm:text-2xl font-bold text-green-800 mb-4">3️⃣ الإجمالي الكلي النهائي</h4>
+                    <p class="text-sm sm:text-base text-gray-700 mb-3">
+                        هو ببساطة <strong class="text-green-700">مجموع الأسعار الإجمالية لكل الفيديوهات</strong> 
+                        (بعد تقريب كل فيديو على حدة باستخدام القاعدة المخصصة).
+                    </p>
+                    <div class="bg-white p-4 rounded-lg shadow">
+                        <p class="text-center text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">
+                            الإجمالي = ∑ (سعر كل فيديو بعد التقريب)
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ملاحظات مهمة -->
+                <div class="bg-indigo-50 p-4 sm:p-6 rounded-xl border-2 border-indigo-300">
+                    <h4 class="text-xl sm:text-2xl font-bold text-indigo-800 mb-4">💡 ملاحظات مهمة</h4>
+                    <ul class="space-y-2 text-sm sm:text-base text-gray-700">
+                        <li class="flex items-start">
+                            <span class="text-indigo-600 font-bold ml-2">•</span>
+                            <span>سعر الريل المقسم ثابت دائماً: <strong>2.5 $</strong></span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-indigo-600 font-bold ml-2">•</span>
+                            <span>سعر الريل المنفصل ثابت دائماً: <strong>5.0 $</strong></span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-indigo-600 font-bold ml-2">•</span>
+                            <span>سعر الدقيقة الافتراضي: <strong>3.5 $</strong> (قابل للتعديل)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-indigo-600 font-bold ml-2">•</span>
+                            <span>يتم تطبيق التقريب على كل فيديو بشكل منفصل قبل الجمع</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-indigo-600 font-bold ml-2">•</span>
+                            <span>الإجمالي النهائي يُعرض بمنزلتين عشريتين (سنت)</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <button onclick="toggleExplanation()" 
+                class="mt-6 w-full bg-gradient-to-r from-gray-600 to-gray-700 text-white py-3 px-4 rounded-xl hover:from-gray-700 hover:to-gray-800 transition font-semibold shadow-lg text-sm sm:text-base">
+                إخفاء الشرح
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal عرض الريلات -->
+    <div id="reelsPopup" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 z-50" style="backdrop-filter: blur(4px);">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden animate-fadeIn">
+            <div class="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 sm:p-6 text-white">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 id="popupTitle" class="text-xl sm:text-2xl font-bold mb-1">الريلات المقسمة</h3>
+                        <p class="text-purple-100 text-xs sm:text-sm">قائمة بجميع الريلات المقسمة للفيديو</p>
+                    </div>
+                    <button onclick="closeReelsPopup()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition">
+                        <svg class="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="popupReelsList" class="p-4 sm:p-6 overflow-y-auto" style="max-height: calc(85vh - 180px);"></div>
+            
+            <div class="bg-gray-50 p-4 border-t border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <p class="text-sm sm:text-base text-gray-600">سعر الريل الواحد: <strong class="text-purple-600">2.5 $</strong></p>
+                    <button onclick="closeReelsPopup()" class="w-full sm:w-auto px-6 py-2 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-lg hover:from-gray-700 hover:to-gray-800 transition font-semibold">
+                        إغلاق
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white shadow-xl mt-12 py-6">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-600">
+            <p class="text-base sm:text-lg font-semibold">© 2025 - نظام حسابات المونتاج الاحترافي</p>
+            <p class="text-xs sm:text-sm mt-2">تم التطوير بعناية لضمان دقة الحسابات والشفافية الكاملة</p>
+        </div>
+    </footer>
+
+    <script>
+        // استخراج معرف الفيديو من رابط يوتيوب
+        function extractYouTubeID(url) {
+            if (!url) return null;
+            
+            // youtube.com/watch?v=VIDEO_ID
+            let match = url.match(/[?&]v=([^&]+)/);
+            if (match) return match[1];
+            
+            // youtu.be/VIDEO_ID
+            match = url.match(/youtu\.be\/([^?]+)/);
+            if (match) return match[1];
+            
+            // youtube.com/shorts/VIDEO_ID
+            match = url.match(/\/shorts\/([^?]+)/);
+            if (match) return match[1];
+            
+            // youtube.com/embed/VIDEO_ID
+            match = url.match(/\/embed\/([^?]+)/);
+            if (match) return match[1];
+            
+            return null;
+        }
+
+        // تحميل الصور المصغرة
+        function loadThumbnails() {
+            const thumbnails = document.querySelectorAll('.lazy-thumbnail');
+            
+            thumbnails.forEach(img => {
+                const videoUrl = img.getAttribute('data-video-url');
+                const videoId = extractYouTubeID(videoUrl);
+                
+                if (videoId) {
+                    const thumbnailUrl = `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`;
+                    
+                    const tempImg = new Image();
+                    tempImg.onload = function() {
+                        img.src = thumbnailUrl;
+                        img.classList.add('loaded');
+                    };
+                    tempImg.onerror = function() {
+                        img.parentElement.innerHTML = `
+                            <div class="thumbnail-placeholder">
+                                <svg class="w-8 h-8 sm:w-10 sm:h-10" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/>
+                                </svg>
+                            </div>
+                        `;
+                    };
+                    tempImg.src = thumbnailUrl;
+                }
+            });
+        }
+
+        // تحميل الصور عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', loadThumbnails);
+
+        // نافذة الترحيب
+        window.addEventListener('DOMContentLoaded', () => {
+            const welcomeModal = document.getElementById('welcomeModal');
+            
+            setTimeout(() => {
+                const modalContent = welcomeModal.querySelector('div');
+                modalContent.classList.remove('welcome-slide-in');
+                modalContent.classList.add('welcome-slide-out');
+                
+                setTimeout(() => {
+                    welcomeModal.style.display = 'none';
+                }, 400);
+            }, 1500);
+        });
+
+        function toggleExplanation() {
+            const section = document.getElementById('explanationSection');
+            section.classList.toggle('hidden');
+            if (!section.classList.contains('hidden')) {
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function showReelsPopup(videoName, reels) {
+            document.getElementById('popupTitle').textContent = `الريلات المقسمة: ${videoName}`;
+            const listEl = document.getElementById('popupReelsList');
+            
+            if (!reels || reels.length === 0) {
+                listEl.innerHTML = '<p class="text-center text-gray-500 text-base sm:text-lg py-8">لا توجد ريلات مقسمة</p>';
+            } else {
+                let html = '';
+                reels.forEach((reel, index) => {
+                    const videoId = extractYouTubeID(reel.video_url);
+                    const thumbnailUrl = videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : null;
+                    
+                    html += `
+                        <div class="flex items-center p-3 sm:p-4 bg-gray-50 rounded-xl shadow mb-3 hover:bg-gray-100 transition">
+                            ${thumbnailUrl ? `
+                            <a href="${reel.video_url}" target="_blank" class="w-16 sm:w-20 flex-shrink-0 ml-3 sm:ml-4 group">
+                                <div class="thumbnail-container" style="aspect-ratio: 9/16;">
+                                    <img src="${thumbnailUrl}" 
+                                         class="w-full h-full object-cover" 
+                                         onerror="this.parentElement.innerHTML='<div class=\\'thumbnail-placeholder\\'>📱</div>'">
+                                    <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition flex items-center justify-center">
+                                        <svg class="w-6 h-6 sm:w-8 sm:h-8 text-white opacity-0 group-hover:opacity-100 transition" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </a>
+                            ` : ''}
+                            <div class="flex-1 min-w-0">
+                                <p class="font-bold text-gray-800 text-sm sm:text-base lg:text-lg mb-1">
+                                    <span class="inline-block bg-purple-100 text-purple-800 rounded-full w-6 h-6 sm:w-7 sm:h-7 text-center leading-6 sm:leading-7 text-xs sm:text-sm font-bold ml-2">${index + 1}</span>
+                                    ${reel.name}
+                                </p>
+                                ${reel.video_url ? `
+                                <a href="${reel.video_url}" target="_blank" class="text-xs sm:text-sm text-purple-600 hover:text-purple-800 hover:underline flex items-center gap-1">
+                                    <svg class="w-3 h-3 sm:w-4 sm:h-4" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z"/>
+                                        <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z"/>
+                                    </svg>
+                                    مشاهدة على يوتيوب
+                                </a>
+                                ` : '<p class="text-xs sm:text-sm text-gray-400">لا يوجد رابط</p>'}
+                            </div>
+                            <div class="text-left ml-3 sm:ml-4 bg-purple-50 px-3 sm:px-4 py-2 rounded-lg">
+                                <p class="text-xs text-gray-600 mb-1">السعر</p>
+                                <p class="text-lg sm:text-xl lg:text-2xl font-bold text-purple-600">2.5 $</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                listEl.innerHTML = html;
+            }
+            
+            document.getElementById('reelsPopup').classList.remove('hidden');
+            document.getElementById('reelsPopup').classList.add('flex');
+        }
+
+        function closeReelsPopup() {
+            document.getElementById('reelsPopup').classList.add('hidden');
+            document.getElementById('reelsPopup').classList.remove('flex');
+        }
+
+        document.getElementById('reelsPopup').addEventListener('click', (e) => {
+            if (e.target.id === 'reelsPopup') closeReelsPopup();
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeReelsPopup();
+        });
+    </script>
+</body>
+</html>
